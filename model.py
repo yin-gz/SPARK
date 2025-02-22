@@ -10,12 +10,15 @@ class MainModel(nn.Module):
         self.llm_gen = llm_gen
         self.vocab = vocab
         
-        if self.args.SAVE_LLM == False:
+        if self.args.ADAPTER_NAME is not None:
             # Init embedding
             self.ent_emb, self.rel_emb = llm_gen.get_ent_rel_emb(vocab["rel2id"], vocab["ent2id"])
             self.adapter_model.entity_raw_embed = self.ent_emb
             self.adapter_model.relation_raw_embed = self.rel_emb
-        
+            # del llm_gen and empty cache
+            del self.llm_gen
+            torch.cuda.empty_cache()
+            
         # BCE LOSS
         if self.args.LOSS_TYPE == "target_loss":
             self.loss = self.target_loss
@@ -116,7 +119,10 @@ class MainModel(nn.Module):
                     out+= "ERROR!\n"
         f.write(out)
         '''
-                
+        # entity_att_scores: [canditate ent in a batch], entities: canditate_ent_num*(bsz_id, ent_id)
+        # ent_distribution: [bsz, num_ent]
+        # batch_answers： K length list, each element is idx
+        # batch_scores: K length list, each element is score
         if self.args.SAVE_LLM:
             return batch_answers, batch_scores, ent_distribution
         elif self.args.LOSS_TYPE == "target_loss":
@@ -129,6 +135,7 @@ class MainModel(nn.Module):
         one_hot_label = torch.from_numpy(
             np.array([int(v == int(target_idx_l[eg_idx])) for eg_idx, v in entities], dtype=np.float32)).to(self.args.DEVICE)
         entity_att_score = entity_att_score*0.999+0.0009
+        # 
         loss = torch.nn.BCELoss()(entity_att_score, one_hot_label)
         return loss
     

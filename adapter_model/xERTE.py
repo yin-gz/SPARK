@@ -510,7 +510,7 @@ class AttentionFlow(nn.Module):
             :param attended_nodes: 
         """
         self.device = device
-        updated_edge_attention = []  # for analysis
+        updated_edge_attention = []
 
         transition_logits = self._cal_attention_score(selected_edges_l[-1], visited_node_representation, rel_emb_l[-1])
 
@@ -519,7 +519,7 @@ class AttentionFlow(nn.Module):
         src_score = visited_node_score[selected_edges_l[-1][:, -2]]
         transition_logits_softmax = segment_softmax_op_v2(transition_logits, selected_edges_l[-1][:, -2],
                                                           tc=tc)  # TB Check
-        edge_attn_before_pruning = transition_logits_softmax  # for analysis
+        edge_attn_before_pruning = transition_logits_softmax
         target_score = transition_logits_softmax * src_score
         pruned_edges, pruned_target_score, orig_indices = self._topk_att_score(selected_edges_l[-1], target_score,
                                                                                max_edges)
@@ -577,7 +577,7 @@ class AttentionFlow(nn.Module):
                                                                                                transition_logits_softmax,
                                                                                                linear_act=False)
 
-        #apply dense layer and activation on updated_memorized_embedding
+        # apply dense layer and activation on updated_memorized_embedding
         updated_visited_node_representation = self.bypass_forward(updated_visited_node_representation)
 
         if analysis:
@@ -609,7 +609,6 @@ class AttentionFlow(nn.Module):
 
     def _update_node_representation_along_edges(self, edges, node_representation, transition_logits, linear_act=True):
         """
-
         :param edges:
         :param memorized_embedding:
         :param transition_logits:
@@ -788,7 +787,7 @@ class xERTE(torch.nn.Module):
         attended_nodes, visited_nodes, visited_node_score, visited_node_representation = self.initialize()
         for step in range(self.DP_steps):
             #            print("{}-th DP step".format(step))
-            # * attended_nodes: selected topk nodes
+            # * attended_nodes: selected topN nodes
             # * visited_nodes: all nodes visited during the expansion, num_nodes_visited x 4 (batch_idx, entity_id, ts, node_idx)
             #! nodes in each step kept or not, can we replicate the paths?
             attended_nodes, visited_nodes, visited_node_score, visited_node_representation = \
@@ -823,9 +822,7 @@ class xERTE(torch.nn.Module):
         #mean_node_representation = scatter_mean(visited_node_representation[attended_nodes[:, -1]], torch.from_numpy(attended_nodes[:, 0]).long().to(self.device), dim = 0)
         #lamda = self.weight_MLP(mean_node_representation)
         
-        
         lamda = self.weight_MLP(self.att_flow_list[-1].query_rel_emb)
-                
         return entity_att_score, entities, ent_distribution, batch_quads, lamda
 
     def _flow(self, attended_nodes, visited_nodes, visited_node_score, visited_node_representation, step, tc=None, device = "cuda:0"):

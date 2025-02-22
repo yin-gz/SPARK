@@ -26,18 +26,20 @@ class Trainer:
         vocab_dict["rel2id"], vocab_dict["id2rel"], vocab_dict["ent2id"], vocab_dict["id2ent"]
         self.args.rel_num = len(vocab_dict["rel2id"])
         self.args.ent_num = len(vocab_dict["ent2id"])
-        self.rules = load_rules("./rule_output/" + self.args.DATASET, args)
+        self.rules = load_rules("./data/rule_output/" + self.args.DATASET, args)
+        
+        #!1. Complete instance information
                 
-        # format data for LLM
+        #1.1 Format data for LLM input
         self.data = {}
         for split, split_data in self.tlr_data.items():
             self.data[split] = llm_transform(split_data, self.ori_facts[split], self.ent2id, self.rel2id, self.args)
-            #add historical information
+            # add extracted historical information to each instance
             if self.args.RAG == "ICL":
                 self.data[split] = add_history(self.data[split], self.graphs, p_rel_num = self.args.rel_num/2)
                 
-
-        # add rule information to each instance
+        #1.2 Add rule information to each instance (only for TLogic)
+        # find the target ent_id that can be reached by the rule {ent_id: [rule_id in its head_rel_list]}
         if args.LOAD_RULE:
             rule_data_path = os.path.join(args.RULE_DATA_PATH, args.DATASET)
             if not os.path.exists(rule_data_path):
@@ -57,13 +59,13 @@ class Trainer:
                     with open(split_rule_file_path, "w") as f:
                         json.dump(split_ent_rules, f)
                     
-        # add precomputed LLM result to each instance if exists
+        #1.3 add precomputed LLM result to each instance if exists
         self.llm_result_path = os.path.join("./data/llm_result")
         if self.args.LOAD_LLM:
             for split, v in self.data.items():
                 self.data[split] = self.load_LLM_output(self.data[split], split)
-
-        
+                
+        #!2. Set LLM and Adapter Models
         # load llm model
         self.llm_gen = LLMGenerator(self.ent2id, self.id2rel, self.args)
         self.llm_model, self.tokenizer = self.llm_gen.model, self.llm_gen.tokenizer
@@ -100,13 +102,16 @@ class Trainer:
         self.model.to(self.args.DEVICE)
         
         # print trainable parameters size
-        trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        print(f"Trainable parameters: {trainable_params}")
+        trainable_params_size = sum(p.numel() * p.element_size() for p in self.model.parameters() if p.requires_grad)
+        print(f"Total trainable parameters size: {trainable_params_size / 1024 / 1024:.2f} MB")
         
-        # construct data loader
+        #!3. Construct data loader
         self.data = gen_ent_distribution(self.data, self.ent2id) # add key "all_targets"
         self.data_iter = self.get_data_loader(self.data)
-
+        
+        #clear exist results
+        if self.args.SAVE_LLM:
+            self.clear_LLM_output()
 
     def get_data_loader(self, data_splits):
         self.data_iter = {}
@@ -272,17 +277,29 @@ class Trainer:
             'epoch': epoch
         }, f"{self.args.OUTPUT_DIR}/"+self.args.RUN_NAME+".pt")
         
-    def save_LLM_output(self, batch_answers, batch_scores, split):
+    def clear_LLM_output(self):
         if not os.path.exists(self.llm_result_path):
             os.makedirs(self.llm_result_path)
 
         suffix = ".txt"
         model_name = self.args.MODEL_NAME.split("/")[-1]
         path = f"{self.llm_result_path}/{model_name}/{self.args.RAG}"
-        file_name = split+"_ans_"+self.args.DATASET+suffix
-        
+    
         if not os.path.exists(path):
             os.makedirs(path)
+        
+        # if exist file_name, delete it
+        for split in ["train", "valid", "test"]:
+            file_name = split+"_ans_"+self.args.DATASET+suffix
+            if os.path.exists(path + "/" + file_name):
+                os.remove(path + "/" + file_name)
+            
+        
+    def save_LLM_output(self, batch_answers, batch_scores, split):
+        suffix = ".txt"
+        model_name = self.args.MODEL_NAME.split("/")[-1]
+        path = f"{self.llm_result_path}/{model_name}/{self.args.RAG}"
+        file_name = split+"_ans_"+self.args.DATASET+suffix
         
         with open(path + "/" + file_name, "a") as f:
             for i in range(len(batch_answers)):

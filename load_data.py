@@ -90,6 +90,9 @@ def prepare_data(args):
         test_ans = [lines[i].split('\t')[2] for i in range(len(lines))]
     test_data = [{"context": context, "target": target} for context, target in zip(test_context, test_ans)]
     #split train data to train and valid
+    #datalen = int(args.TRAIN_PROP * (int(len(train_data)*0.8)))
+    #train_split = train_data[:int(len(train_data)*0.8)]
+    #valid_split = train_data[int(len(train_data)*0.8):]
     datalen = int(args.TRAIN_PROP * (int(len(train_data)*0.8) - int(len(train_data)*0.2)))
     train_split = train_data[int(len(train_data)*0.8) - datalen:int(len(train_data)*0.8)]
     valid_split = train_data[int(len(train_data)*0.8):]
@@ -125,8 +128,7 @@ def prepare_graph(args, rel_num):
     for value in adj_dict.values():
         for rel_id, rel_value in value.items():
             rel_value.sort(key=lambda
-                            x: (x[1], x[0]))
-            
+                            x: (x[1], x[0]))           
     return facts, adj_dict
 
 def prepare_graph_xERTE(args, rel_num):
@@ -163,6 +165,7 @@ def prepare_graph_xERTE(args, rel_num):
 def load_vocab(ori_dataset_path):
     '''
     Load relation2id and entity2id from ori_dataset_path.
+    Note: relation2id includes the inverse relations.
     '''
     rel2id_file = os.path.join(ori_dataset_path, "relation2id.json")
     ent2id_file = os.path.join(ori_dataset_path, "entity2id.json")
@@ -315,6 +318,7 @@ def load_rules(rule_file_path, args):
 def add_history(instances, graphs, p_rel_num):
     '''
     Add "his_quads" to instance based on graph information.
+    His_quads: list of [vi, vj, tj, rel] related to vi.
     '''
     for instance in instances:
         q_ts, q_head_id, q_rel_id = instance['query_tuple']
@@ -339,7 +343,7 @@ def add_history(instances, graphs, p_rel_num):
                         if ts < q_ts:
                             his_quad_reuslt.append([q_head_id, tail_id, ts, rel_id])
                 
-        #turn to numpy
+        # turn to numpy
         his_quad_reuslt = np.asarray(his_quad_reuslt)
         instance["his_quads"] = his_quad_reuslt
     return instances

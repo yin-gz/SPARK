@@ -125,12 +125,11 @@ class TLogic(nn.Module):
         body_out = self.MLP(body_embs_view) #[N, emb_dim]
         '''
         
-        # Method2: GRU/RNN to select the last hidden state
+        # Method2: LSTM to compute the last hidden state
         body_out, _ = self.lstm(body_embs)
         body_out = body_out[:, -1, :] #[N, emb_dim]
 
         scores = torch.nn.functional.cosine_similarity(query_embs, body_out, dim=1, eps=1e-8).unsqueeze(1)
-        #! may be to add a sigmoid?
         return scores
 
  
