@@ -7,6 +7,8 @@ The official codes for paper "Ignite Forecasting with SPARK: An Efficient Genera
 <img align="center"  src="./main.png" alt="...">
 
 * In the first stage, the LLM generates the next entity distribution based on retrieved historical sequences using BSL generation.
+
+  <img align="center"  src="./beamgen.png" alt="..." >
 * Simultaneously, the adapting models operate on the global graph, learning temporal patterns and producing their own next entity distribution.
 * We can see that candidate entities like "e7" and "e8," omitted by the LLM due to input length limitations, are considered by the TKG Adapter.
 * In the next stage, these two distributions are dynamically combined, resulting in an adapted output distribution as the final prediction.

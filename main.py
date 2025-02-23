@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument('--MODEL_NAME', type=str, default="../LLM/lmsys/llama-2-7b-hf", help='Model name') #gpt-neox-20b, llama-2-7b-hf, internlm2-7b
     parser.add_argument('--NUM_SEQS', type=int, default=10, help='Number of top-K generated seqs for llm')
     parser.add_argument('--SAVE_LLM', default=False, action="store_true", help='Only use LLM and pre-save its output')
-    parser.add_argument('--LOAD_LLM', default=True, action="store_true", help='Load LLM results')
+    parser.add_argument('--LOAD_LLM', default=False, action="store_true", help='Load LLM results')
     parser.add_argument('--RAG', type=str, default="TLR", help='ICL or TLR to generate prompt')
     parser.add_argument('--GEN_MODE', type=str, default="beam", choices=["beam", "iterative"], help='Beam generate or iterative generate')
     
@@ -56,13 +56,13 @@ def parse_args():
     parser.add_argument('--SAVE_STEPS', type=int, default=20, help='Save the model according to steps')
     parser.add_argument('--NUM_WORKERS', type=int, default=0, help='Number of workers in dataloader')
     parser.add_argument('--LOSS_TYPE', type=str, default = "target_loss", choices= ["target_loss", "all_loss"], help = 'Calculate loss only for candidate targets (predicting prob != 0) or for all entities')
-    parser.add_argument('--ONLY_TEST', default = True, action="store_true", help = 'Only restore model and test')
+    parser.add_argument('--ONLY_TEST', default = False, action="store_true", help = 'Only restore model and test')
     parser.add_argument('--TRAIN_PROP', type=float, default = 1, help = 'Train data proportion')
     parser.add_argument('--DEVICE', type=str, default="cuda:0", choices=["cuda:0", "cuda:1", "cpu"], help='Device to use')
     parser.add_argument('--RESTORE', type=str, default=None, help='Set None to no restore')
     
     #! Logging parameters
-    parser.add_argument('--WANDB', type=bool, default=True, help='Logging to wandb')
+    parser.add_argument('--WANDB', type=bool, default=False, help='Logging to wandb')
     parser.add_argument('--RUN_NAME', type=str, default=None, help='Run name for wandb')
 
     #! xERTE
