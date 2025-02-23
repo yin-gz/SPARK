@@ -16,8 +16,9 @@ class MainModel(nn.Module):
             self.adapter_model.entity_raw_embed = self.ent_emb
             self.adapter_model.relation_raw_embed = self.rel_emb
             # del llm_gen and empty cache
-            del self.llm_gen
-            torch.cuda.empty_cache()
+            if self.args.LOAD_LLM:
+                del self.llm_gen
+                torch.cuda.empty_cache()
             
         # BCE LOSS
         if self.args.LOSS_TYPE == "target_loss":
@@ -56,6 +57,7 @@ class MainModel(nn.Module):
         if llm_ent_distribution is not None and adpter_distribution is not None:
             if self.args.ADAPTER_NAME != "xERTE":
                 lamda = 0.5
+            #lamda = 0.5
             llm_ent_distribution = llm_ent_distribution.to(self.args.DEVICE)
             ent_distribution = lamda*adpter_distribution + (1-lamda)*llm_ent_distribution
             # ent_distribution = torch.mul(adpter_distribution + 1e-4, llm_ent_distribution + 1e-4)

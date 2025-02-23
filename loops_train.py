@@ -155,7 +155,7 @@ class Trainer:
         results = None
         best_mrr = 0
         for epoch in range(start_epoch, self.args.EPOCHS):
-            self.model.train()
+            #self.model.train()
             per_epoch_loss = [] # store loss of each step in one epoch
             
             for i, batch in enumerate(tqdm(self.data_iter['train'], desc=f"Epoch {epoch}")):
@@ -224,6 +224,18 @@ class Trainer:
                         wandb.log({f"valid/{key}":value ,"epoch": epoch})
             
             # evaluate on the test set
+            start_test = time.time()
+            test_results = self.evaluate(epoch, 'test')
+            test_time = time.time() - start_test
+            print(f"Test Results: {test_results}")
+            if self.args.WANDB:
+                wandb.log({f"test/time": test_time, "epoch": epoch})
+                for key, value in test_results.items():
+                    if "c" in key:
+                        continue
+                    else:
+                        wandb.log({f"test/{key}":value ,"epoch": epoch})
+
             if valid_results['mrr'] > best_mrr:
                 best_mrr = valid_results['mrr']
                 print("Get best MRR: ", best_mrr)
@@ -232,17 +244,6 @@ class Trainer:
                     torch.save(self.adapter_model, self.apth)
                 elif self.optimizer is not None:
                     self.save_model(epoch)
-                start_test = time.time()
-                test_results = self.evaluate(epoch, 'test')
-                test_time = time.time() - start_test
-                print(f"Test Results: {test_results}")
-                if self.args.WANDB:
-                    wandb.log({f"test/time": test_time, "epoch": epoch})
-                    for key, value in test_results.items():
-                        if "c" in key:
-                            continue
-                        else:
-                            wandb.log({f"test/{key}":value ,"epoch": epoch})    
             else:
                 print("Mrr not improved")
                 

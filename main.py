@@ -25,8 +25,8 @@ def parse_args():
     parser.add_argument('--WITH_INSTRUCT', type=bool, default=False, help='Use instruct or not')
     parser.add_argument('--MODEL_NAME', type=str, default="../LLM/lmsys/llama-2-7b-hf", help='Model name') #gpt-neox-20b, llama-2-7b-hf, internlm2-7b
     parser.add_argument('--NUM_SEQS', type=int, default=10, help='Number of top-K generated seqs for llm')
-    parser.add_argument('--SAVE_LLM', default=True, action="store_true", help='Only use LLM and pre-save its output')
-    parser.add_argument('--LOAD_LLM', default=False, action="store_true", help='Load LLM results')
+    parser.add_argument('--SAVE_LLM', default=False, action="store_true", help='Only use LLM and pre-save its output')
+    parser.add_argument('--LOAD_LLM', default=True, action="store_true", help='Load LLM results')
     parser.add_argument('--RAG', type=str, default="TLR", help='ICL or TLR to generate prompt')
     parser.add_argument('--GEN_MODE', type=str, default="beam", choices=["beam", "iterative"], help='Beam generate or iterative generate')
     
@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument('--DATA_PATH', type=str, default="./data/processed", help='Input dir of processed trainset')
     parser.add_argument('--ORI_DATA_PATH', type=str, default="./data/original", help='Input dir of original trainset')
     parser.add_argument('--RULE_DATA_PATH', type=str, default="./data/rule", help='Input dir to store rule information of each instance')
-    parser.add_argument('--DATASET', type=str, default="icews14", choices=["icews14", "icews18", "GDELT"], help='Name of dataset')
+    parser.add_argument('--DATASET', type=str, default="GDELT", choices=["icews14", "icews18", "GDELT"], help='Name of dataset')
     
     #! Adapter parameters
     parser.add_argument('--ADAPTER_NAME', type=str, default=None, choices=["TLogic", "xERTE", None], help='Adapter model name')
@@ -47,7 +47,7 @@ def parse_args():
     #! Training parameters
     parser.add_argument("--TRAIN_BS", type=int, default=128, choices = [128, 256, 512], help="Batch size for train")
     parser.add_argument("--EVAL_BS", type=int, default=128, choices = [128, 256, 512], help="Batch size for evaluating")
-    parser.add_argument('--EPOCHS', type=int, default=5, help='Training epochs')
+    parser.add_argument('--EPOCHS', type=int, default=10, help='Training epochs')
     parser.add_argument('--DR', type=str, default="plateau", help="stepLR/cosine/plateau/onecycle")
     parser.add_argument('--WARMUP_STEPS', type=int, default=100, help='Warmup steps')
     parser.add_argument('--LEARNING_RATE', type=float, default= 1e-4, choices = [1e-5, 5e-5, 1e-4], help='Training learning rate')
@@ -56,13 +56,13 @@ def parse_args():
     parser.add_argument('--SAVE_STEPS', type=int, default=20, help='Save the model according to steps')
     parser.add_argument('--NUM_WORKERS', type=int, default=0, help='Number of workers in dataloader')
     parser.add_argument('--LOSS_TYPE', type=str, default = "target_loss", choices= ["target_loss", "all_loss"], help = 'Calculate loss only for candidate targets (predicting prob != 0) or for all entities')
-    parser.add_argument('--ONLY_TEST', default = False, action="store_true", help = 'Only restore model and test')
+    parser.add_argument('--ONLY_TEST', default = True, action="store_true", help = 'Only restore model and test')
     parser.add_argument('--TRAIN_PROP', type=float, default = 1, help = 'Train data proportion')
     parser.add_argument('--DEVICE', type=str, default="cuda:0", choices=["cuda:0", "cuda:1", "cpu"], help='Device to use')
     parser.add_argument('--RESTORE', type=str, default=None, help='Set None to no restore')
     
     #! Logging parameters
-    parser.add_argument('--WANDB', type=bool, default=False, help='Logging to wandb')
+    parser.add_argument('--WANDB', type=bool, default=True, help='Logging to wandb')
     parser.add_argument('--RUN_NAME', type=str, default=None, help='Run name for wandb')
 
     #! xERTE
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     if args.ADAPTER_NAME == "xERTE":
         ori_facts, graphs = prepare_graph_xERTE(args, rel_num = len(vocab_dict["rel2id"])/2)
     else:
-        ori_facts, graphs = prepare_graph(args, rel_num = len(vocab_dict["rel2id"]))
+        ori_facts, graphs = prepare_graph(args, rel_num = len(vocab_dict["rel2id"])/2)
     
 
     trainer = Trainer(args, tlr_data, ori_facts, graphs, vocab_dict)

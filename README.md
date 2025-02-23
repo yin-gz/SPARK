@@ -6,26 +6,14 @@ The official codes for paper "Ignite Forecasting with SPARK: An Efficient Genera
 
 <img align="center"  src="./main.png" alt="...">
 
-* In the first stage, the LLM generates the next entity distribution based on retrieved historical sequences.
+* In the first stage, the LLM generates the next entity distribution based on retrieved historical sequences using BSL generation.
 * Simultaneously, the adapting models operate on the global graph, learning temporal patterns and producing their own next entity distribution.
 * We can see that candidate entities like "e7" and "e8," omitted by the LLM due to input length limitations, are considered by the TKG Adapter.
 * In the next stage, these two distributions are dynamically combined, resulting in an adapted output distribution as the final prediction.
 
 ## Experimental Details
 
-When implementing, we use the efficient LLM inference framework vLLM. All experiments were conducted on 2×Nvidia A100 GPUs. For ICL-retrieval-based LLMs, we use a history length of 100; while for TLR-retrieval-based LLMs, we follow the same settings. For the beam-search strategy, we set the number of beams $n$ =10. To make the adapter training process more efficient, we precompute the LLMs' output distributions and store the results. Initial embeddings of entities and relations are generated using LLama2-7B, and projected to a fixed embedding size of 200 across all datasets.
-
-For each dataset, we set the training epochs to 10 and tune the learning rate $lr$: [1e-5, 5e-5, 1e-4] and the batch size $\rho$: [128, 256, 512] based on the validation set results.
-
-Best Params:
-
-* Llama2-7B-TLR + SPARK(G)
-
-    ICEWS14: , ICEWS18: , GDELT:
-
-* Llama2-7B-TLR + SPARK(R)
-
-  ICEWS14: , ICEWS18: , GDELT:
+When implementing, we use the efficient LLM inference framework vLLM. All experiments were conducted on Nvidia A100 GPUs. For ICL-retrieval-based LLMs, we use a history length of 100; while for TLR-retrieval-based LLMs, we follow the same settings. For the beam-search strategy, we set the number of beams $n$ =10. To make the adapter training process more efficient, we precompute the LLMs' output distributions and store the results. Initial embeddings of entities and relations are generated using LLama2-7B, and projected to a fixed embedding size of 200 across all datasets.
 
 ## How to Run?
 
@@ -83,10 +71,6 @@ python main.py --DATASET "icews18" --MODEL_NAME your_LLM_path --RAG "TLR" --GEN_
 # Modify Step1 to the following command and keep step2 as original:
 python main.py --DATASET "icews14" --MODEL_NAME your_LLM_path --RAG "TLR" --GEN_MODE "iterative" --SAVE_LLM
 ```
-
-### Official Reproduce Reports
-
-* You can find the official reproduce reports using wandb [here](https://wandb.ai/catyin/Nary-Inductive-SubG/reports/Report--VmlldzoxMDkxMjcyNw?accessToken=2n7v6x8o328w3oq45toq5d5fe60tmdgonng1xdmn0dii7jqek6ixkx3jm1jcfe54).
 
 ## Citations
 

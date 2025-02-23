@@ -16,7 +16,7 @@ def sync_wandb():
             print(result.stdout)  
         except subprocess.CalledProcessError as e:  
             print(f"Error syncing {run}: {e}")  
-            print(e.stderr)  
+            print(e.stderr)     
 
 def main():  
     while True:  
